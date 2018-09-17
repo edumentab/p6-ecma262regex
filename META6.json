@@ -1,0 +1,18 @@
+{
+    "name" : "ECMA262Regex",
+    "description" : "Module that provides support for ECMA262 regex notation",
+    "perl" : "6.c",
+    "license" : "Artistic-2.0",
+    "meta-version" : "0",
+    "authors" : [
+        "Jonathan Worthington <jnthn@jnthn.net>"
+    ],
+    "provides" : {
+        "ECMA262Regex" : "lib/ECMA262Regex.pm6"
+    },
+    "source-url" : "",
+    "support" : {
+        "source" : null
+    },
+    "version" : "0.0.1"
+}
