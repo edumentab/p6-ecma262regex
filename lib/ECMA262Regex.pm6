@@ -327,3 +327,24 @@ class ECMA262Regex::ToPerl6Regex {
         }
     }
 }
+
+class ECMA262Regex {
+    method validate($str) {
+        so ECMA262Regex::Parser.parse($str);
+    }
+
+    method as-perl6($str) {
+        my $regex = ECMA262Regex::Parser.parse($str, actions => ECMA262Regex::ToPerl6Regex);
+        unless $regex.defined {
+            die 'Regex is not valid!';
+        }
+        $regex.made;
+    }
+
+    method compile($regex) {
+        use MONKEY-SEE-NO-EVAL;
+        my $pattern = self.as-perl6($regex);
+        my $compiled = EVAL 'rx:P5/' ~ $pattern ~ '/';
+        $compiled;
+    }
+}
