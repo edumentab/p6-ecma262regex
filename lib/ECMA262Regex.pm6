@@ -1,4 +1,5 @@
 use v6;
+use Constants;
 
 grammar ECMA262Regex::Parser {
     token TOP {
@@ -106,5 +107,223 @@ grammar ECMA262Regex::Parser {
         | 'b'
         | <character-escape>
         | <character-class-escape>
+    }
+}
+
+class ECMA262Regex::ToPerl6Regex {
+    method TOP($/) {
+        make $<disjunction>.made;
+    }
+
+    method disjunction($/) {
+        make $<alternative>>>.made.join(' || ');
+    }
+
+    method alternative($/) {
+        make $<term>>>.made.join;
+    }
+
+    method term($/) {
+        with $<assertion> {
+            make $<assertion>.made;
+        } else {
+            my $atom = $<atom>.made;
+            with $<quantifier> {
+                make $atom ~ $<quantifier>.made;
+            } else {
+                make $atom;
+            }
+        }
+    }
+
+    method assertion($/) {
+        given ~$/ {
+            when '^'|'$' { make ~$/ }
+            when '\\b'   { make "<|w>" }
+            when '\\B'   { make "<!|w>" }
+            when *.starts-with('(?=') { make '<?before ' ~ $<disjunction>.made ~ '>' }
+            when *.starts-with('(!?') { make '<!before ' ~ $<disjunction>.made ~ '>' }
+        }
+    }
+
+    method quantifier($/) {
+        if $/.Str.ends-with('?') {
+            make $<quantifier-prefix>.made;
+        } else {
+            make $<quantifier-prefix>.made;
+        }
+    }
+
+    method quantifier-prefix($/) {
+        if not $/.Str.starts-with('{') {
+            make ~$/;
+        } else {
+            # {n}
+            if not $/.Str.contains(',') {
+                make ' ** ' ~ ~$<decimal-digits>;
+            } else {
+                if $<decimal-digits>.elems == 1 {
+                    make ' ** ' ~ $<decimal-digits>[0].Str ~ '..* ';
+                } else {
+                    make ' ** ' ~ $<decimal-digits>.map({ ~$_ }).join('..');
+                }
+            }
+        }
+    }
+
+    method atom($/) {
+        if $/.Str.starts-with('(?:') {
+            make '[' ~ $<disjunction>.made ~ ']';
+            return;
+        } elsif $/.Str.starts-with('(') {
+            make '(' ~ $<disjunction>.made ~ ')';
+            return;
+        } elsif $/.Str eq '.' {
+            make '.';
+            return;
+        }
+
+        with $<pattern-character> {
+            make $<pattern-character>.made;
+        }
+        orwith $<atom-escape> {
+            make $<atom-escape>.made;
+        }
+        orwith $<character-class> {
+            make $<character-class>.made;
+        }
+    }
+
+    method pattern-character($/) {
+        make ~$/;
+    }
+
+    method atom-escape($/) {
+        with $<decimal-digits> {
+            make '$' ~ $<decimal-digits>.made;
+        }
+        orwith $<character-escape> {
+            make $<character-escape>.made;
+        } else {
+            make '\\' ~ $<character-class-escape>.made;
+        }
+    }
+
+    method character-escape($/) {
+        with $<control-escape> {
+            make $<control-escape>.made;
+        }
+        orwith $<control-letter> {
+            make $<control-letter>.made;
+        }
+        orwith $<hex-escape-sequence> {
+            make $<hex-escape-sequence>.made;
+        }
+        orwith $<unicode-escape-sequence> {
+            make $<unicode-escape-sequence>.made;
+        }
+        orwith $<identity-escape> {
+            make $<identity-escape>.made;
+        }
+    }
+
+    method control-escape($/) {
+        if $/.Str.ends-with("v") {
+            make "\c[VERTICAL TABULATION]"
+        } else {
+            make '\\' ~ $/.Str;
+        }
+    }
+
+    method control-letter($/) {
+        my $name = %control-char-to-unicode-name{~$/};
+        unless $name.defined {
+            die 'Unknown control character escape is present: ' ~ $/.Str;
+        }
+        make '"\c[' ~ $name ~ ']"';
+    }
+
+    method hex-escape-sequence($/) {
+        make '\x' ~ $/.Str.substr(1);
+    }
+
+    method unicode-escape-sequence($/) {
+        make '\x' ~ $/.Str.substr(1);
+    }
+
+    method identity-escape-sequence($/) {
+        # FIXME
+        make ~$/;
+    }
+
+    method decimal-digits($/) {
+        make ~$/;
+    }
+
+    method character-class-escape($/) {
+        make ~$/;
+    }
+
+    method character-class($/) {
+        my $start = '<';
+        $start ~= '-' if $/.Str.starts-with('[^');
+        $start ~= '[' ~ $<class-ranges>.made;
+        make $start ~ ']>';
+    }
+
+    method class-ranges($/) {
+        with $<non-empty-class-ranges> {
+            make $<non-empty-class-ranges>.made;
+        } else { make '' }
+    }
+
+    method non-empty-class-ranges($/) {
+        with $<class-atom-no-dash> {
+            my $class = $<class-atom-no-dash>.made;
+            with $<non-empty-class-ranges-no-dash> {
+                $class ~= $<non-empty-class-ranges-no-dash>.made;
+            }
+            make $class;
+            return;
+        }
+        make ~$/;
+    }
+
+    method non-empty-class-ranges-no-dash($/) {
+        with $<class-ranges> {
+            make $<class-atom-no-dash>.made ~ '..' ~ $<class-atom>.made ~ $<class-ranges>.made;
+        } orwith $<class-atom> {
+            make $<class-atom>.made;
+        } else {
+            make $<class-atom-no-dash> ~ ' ' ~ $<non-empty-class-ranges-no-dash>.made;
+        }
+    }
+
+    method class-atom($/) {
+        if $/.Str eq '-' {
+            make '-';
+        } else {
+            make $<class-atom-no-dash>.made;
+        }
+    }
+
+    method class-atom-no-dash($/) {
+        with $<class-escape> {
+            make $<class-escape>.made;
+        } else {
+            make ~$/;
+        }
+    }
+
+    method class-escape($/) {
+        with $<decimal-digits> {
+            make '$' ~ $<decimal-digits>.made;
+        } orwith $<character-escape> {
+            make $<character-escape>.made;
+        } orwith $<character-class-escape> {
+            make '\\' ~ $<character-class-escape>.made;
+        } else {
+            make "<|w>";
+        }
     }
 }
