@@ -5,7 +5,8 @@
     "license" : "Artistic-2.0",
     "meta-version" : "0",
     "authors" : [
-        "Jonathan Worthington <jnthn@jnthn.net>"
+        "Jonathan Worthington <jnthn@jnthn.net>",
+        "Alexander Kiryuhin <alexander.kiryuhin@gmail.com"
     ],
     "provides" : {
         "ECMA262Regex" : "lib/ECMA262Regex.pm6"
@@ -14,5 +15,5 @@
     "support" : {
         "source" : null
     },
-    "version" : "0.0.1"
+    "version" : "1.0"
 }
