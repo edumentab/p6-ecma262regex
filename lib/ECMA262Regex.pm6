@@ -169,7 +169,7 @@ class ECMA262Regex::ToPerl6Regex {
             when '\\b'   { make "<|w>" }
             when '\\B'   { make "<!|w>" }
             when *.starts-with('(?=') { make '<?before ' ~ $<disjunction>.made ~ '>' }
-            when *.starts-with('(!?') { make '<!before ' ~ $<disjunction>.made ~ '>' }
+            when *.starts-with('(?!') { make '<!before ' ~ $<disjunction>.made ~ '>' }
         }
     }
 
@@ -371,7 +371,7 @@ class ECMA262Regex {
     method compile($regex) {
         use MONKEY-SEE-NO-EVAL;
         my $pattern = self.as-perl6($regex);
-        my $compiled = EVAL 'rx:P5/' ~ $pattern ~ '/';
+        my $compiled = EVAL '/' ~ $pattern ~ '/';
         $compiled;
     }
 }

@@ -36,6 +36,7 @@ is c('\w'), '\w', 'One word character';
 is c('\W'), '\W', 'One non-word character';
 
 is c('^\b\B$'), '^<|w><!|w>$', 'Start of string, end of string, word boundary';
+is c('^(?!0)\d+$'), '^<!before 0>\d+$', '?! compiles correctly';
 
 is c('\n'), '\n';
 is c('\r'), '\r';
