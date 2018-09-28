@@ -227,7 +227,8 @@ class ECMA262Regex::ToPerl6Regex {
 
     method atom-escape($/) {
         with $<decimal-digits> {
-            make '$' ~ $<decimal-digits>.made;
+            my $num = $<decimal-digits>.made.Int;
+            make '$' ~ --$num;
         }
         orwith $<character-escape> {
             make $<character-escape>.made;
@@ -345,7 +346,8 @@ class ECMA262Regex::ToPerl6Regex {
 
     method class-escape($/) {
         with $<decimal-digits> {
-            make '$' ~ $<decimal-digits>.made;
+            my $num = $<decimal-digits>.made.Int;
+            make '$' ~ --$num;
         } orwith $<character-escape> {
             make $<character-escape>.made;
         } orwith $<character-class-escape> {

@@ -23,7 +23,7 @@ is c('a{2,}'), 'a ** 2..* ', '2 or more';
 is c('([ab]+)'), '(<[ab]>+)', 'Capturing group';
 # todo '`(?` syntax is NYI in grammar', 1;
 # is c('(?[ab]+)'), '<?before <[ab]>+>', 'Non-capturing group';
-is c('(ha)\1'), '(ha)$1', 'Match the 1th captured group';
+is c('(ha)\1'), '(ha)$0', 'Match the 1th captured group';
 
 is c('[ab-d]'), '<[ab..d]>', 'One character of: a, b, c, d';
 is c('[^ab-d]'), '<-[ab..d]>', 'One character except: a, b, c, d';
