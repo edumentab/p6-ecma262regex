@@ -278,9 +278,8 @@ class ECMA262Regex::ToPerl6Regex {
         make '\x' ~ $/.Str.substr(1);
     }
 
-    method identity-escape-sequence($/) {
-        # FIXME
-        make ~$/;
+    method identity-escape($/) {
+        make '\\' ~ $/.Str;
     }
 
     method decimal-digits($/) {
@@ -305,15 +304,17 @@ class ECMA262Regex::ToPerl6Regex {
     }
 
     method non-empty-class-ranges($/) {
-        with $<class-atom-no-dash> {
+        with $<class-ranges> {
+            make $<class-atom>[0].made ~ '..' ~ $<class-atom>[1].made ~ $<class-ranges>.made;
+        } orwith $<class-atom-no-dash> {
             my $class = $<class-atom-no-dash>.made;
             with $<non-empty-class-ranges-no-dash> {
                 $class ~= $<non-empty-class-ranges-no-dash>.made;
             }
             make $class;
-            return;
+        } else {
+            make $<class-atom>.made;
         }
-        make ~$/;
     }
 
     method non-empty-class-ranges-no-dash($/) {

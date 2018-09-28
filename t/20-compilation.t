@@ -37,6 +37,7 @@ is c('\W'), '\W', 'One non-word character';
 
 is c('^\b\B$'), '^<|w><!|w>$', 'Start of string, end of string, word boundary';
 is c('^(?!0)\d+$'), '^<!before 0>\d+$', '?! compiles correctly';
+is c('[A-Fa-f]+'), '<[A..Fa..f]>+', 'Class ranges are compiled correctly';
 
 is c('\n'), '\n';
 is c('\r'), '\r';
