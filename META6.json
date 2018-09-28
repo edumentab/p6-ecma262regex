@@ -15,5 +15,6 @@
     "support" : {
         "source" : "git://github.com/edumentab/p6-ecma262regex.git"
     },
-    "version" : "1.0"
+    "version" : "1.1",
+    "tags" : [ "regex", "regular expressions", "javascript" ],
 }
