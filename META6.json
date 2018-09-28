@@ -11,9 +11,9 @@
     "provides" : {
         "ECMA262Regex" : "lib/ECMA262Regex.pm6"
     },
-    "source-url" : "",
+    "source-url" : "https://github.com/edumentab/p6-ecma262regex.git",
     "support" : {
-        "source" : null
+        "source" : "https://github.com/edumentab/p6-ecma262regex.git"
     },
     "version" : "1.0"
 }
