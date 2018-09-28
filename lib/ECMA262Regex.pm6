@@ -313,7 +313,7 @@ class ECMA262Regex::ToPerl6Regex {
             }
             make $class;
         } else {
-            make $<class-atom>.made;
+            make $<class-atom>>>.made;
         }
     }
 
