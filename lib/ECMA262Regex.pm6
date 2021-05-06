@@ -222,7 +222,7 @@ class ECMA262Regex::ToPerl6Regex {
     }
 
     method pattern-character($/) {
-        make ~$/;
+        make $/.Str.ords.map({ "\\x" ~ .base(16) }).join;
     }
 
     method atom-escape($/) {
@@ -265,7 +265,7 @@ class ECMA262Regex::ToPerl6Regex {
 
     method control-letter($/) {
         my $name = %control-char-to-unicode-name{~$/};
-        unless $name.defined {
+        without $name {
             die 'Unknown control character escape is present: ' ~ $/.Str;
         }
         make '"\c[' ~ $name ~ ']"';
@@ -365,7 +365,7 @@ class ECMA262Regex {
 
     method as-perl6($str) {
         my $regex = ECMA262Regex::Parser.parse($str, actions => ECMA262Regex::ToPerl6Regex);
-        unless $regex.defined {
+        without $regex {
             die 'Regex is not valid!';
         }
         $regex.made;
