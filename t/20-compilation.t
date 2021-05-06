@@ -8,22 +8,22 @@ sub c($str) {
 }
 
 is c('...'), '...', 'Any character';
-is c('a'), 'a', 'The character a';
-is c('ab'), 'ab', 'The string ab';
-is c('a|b'), 'a || b', 'a or b';
-is c('a*'), 'a*', '0 or more a\'s';
+is c('a'), '\x61', 'The character a';
+is c('ab'), '\x61\x62', 'The string ab';
+is c('a|b'), '\x61 || \x62', 'a or b';
+is c('a*'), '\x61*', '0 or more a\'s';
 is c('\n'), '\n', '\ escapes a special character';
 
-is c('a+'), 'a+', '1 or more';
-is c('a?'), 'a?', '0 or 1';
-is c('a{2}'), 'a ** 2', 'Exactly 2';
-is c('a{2,5}'), 'a ** 2..5', 'Between 2 and 5';
-is c('a{2,}'), 'a ** 2..* ', '2 or more';
+is c('a+'), '\x61+', '1 or more';
+is c('a?'), '\x61?', '0 or 1';
+is c('a{2}'), '\x61 ** 2', 'Exactly 2';
+is c('a{2,5}'), '\x61 ** 2..5', 'Between 2 and 5';
+is c('a{2,}'), '\x61 ** 2..* ', '2 or more';
 
 is c('([ab]+)'), '(<[ab]>+)', 'Capturing group';
 # todo '`(?` syntax is NYI in grammar', 1;
 # is c('(?[ab]+)'), '<?before <[ab]>+>', 'Non-capturing group';
-is c('(ha)\1'), '(ha)$0', 'Match the 1th captured group';
+is c('(ha)\1'), '(\x68\x61)$0', 'Match the 1th captured group';
 
 is c('[ab-d]'), '<[ab..d]>', 'One character of: a, b, c, d';
 is c('[^ab-d]'), '<-[ab..d]>', 'One character except: a, b, c, d';
@@ -36,7 +36,7 @@ is c('\w'), '\w', 'One word character';
 is c('\W'), '\W', 'One non-word character';
 
 is c('^\b\B$'), '^<|w><!|w>$', 'Start of string, end of string, word boundary';
-is c('^(?!0)\d+$'), '^<!before 0>\d+$', '?! compiles correctly';
+is c('^(?!0)\d+$'), '^<!before \x30>\d+$', '?! compiles correctly';
 is c('[A-Fa-f]+'), '<[A..Fa..f]>+', 'Class ranges are compiled correctly';
 is c('[-]{2}'), '<[-]> ** 2', 'Dash class range';
 
@@ -48,8 +48,8 @@ is c('\x50'), '\x50';
 is c('\u0050'), '\x0050';
 is c('\cY'), '"\c[END OF MEDIUM]"';
 
-
 is c('^\d+$'), '^\d+$';
 is c('\cA') , '"\c[START OF HEADING]"';
+is c('#\d'), '\x23\d';
 
 done-testing;
