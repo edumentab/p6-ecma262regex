@@ -1,4 +1,4 @@
-### ECMA262Regex
+### ECMA262Regex ![Build Status](https://github.com/edumentab/p6-ecma262regex/actions/workflows/ci.yml/badge.svg)
 
 This module allows you parsing ECMA262 regex notation and use it in Perl 6.
 
