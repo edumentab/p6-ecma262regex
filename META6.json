@@ -6,7 +6,7 @@
     "meta-version" : "0",
     "authors" : [
         "Jonathan Worthington <jnthn@jnthn.net>",
-        "Alexander Kiryuhin <alexander.kiryuhin@gmail.com"
+        "Alexander Kiryuhin <alexander.kiryuhin@gmail.com>"
     ],
     "provides" : {
         "ECMA262Regex" : "lib/ECMA262Regex.pm6"
