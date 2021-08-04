@@ -46,28 +46,28 @@ grammar ECMA262Regex::Parser {
         ]
     }
     token assertion {
-        | '^'
-        | '$'
-        | '\\' <[bB]>
-        | '(?=' <disjunction> ')'
-        | '(?!' <disjunction> ')'
+        | $<start>='^'
+        | $<end>='$'
+        | '\\' $<bound>=<[bB]>
+        | $<poslook>='(?=' <disjunction> ')'
+        | $<neglook>='(?!' <disjunction> ')'
     }
     token quantifier {
-        <quantifier-prefix> '?'?
+        <quantifier-prefix> [$<frugal>='?']?
     }
     token quantifier-prefix {
         | '+'
         | '*'
         | '?'
-        | '{' <decimal-digits> [ ',' <decimal-digits>? ]? '}'
+        | '{' <from=decimal-digits> [ $<upto>=',' <to=decimal-digits>? ]? '}'
     }
     token atom {
         | <pattern-character>
-        | '.'
+        | $<any>='.'
         | '\\' <atom-escape>
         | <character-class>
-        | '(' <disjunction> ')'
-        | '(?:' <disjunction> ')'
+        | $<capture>='(' <disjunction> ')'
+        | $<group>='(?:' <disjunction> ')'
     }
     token pattern-character {
         <-[^$\\.*+?()[\]{}|]>
@@ -137,7 +137,7 @@ grammar ECMA262Regex::Parser {
     }
 }
 
-class ECMA262Regex::ToPerl6Regex {
+class ECMA262Regex::ToRakuRegex {
     method TOP($/) {
         make $<disjunction>.made;
     }
@@ -358,23 +358,201 @@ class ECMA262Regex::ToPerl6Regex {
     }
 }
 
+class ECMA262Regex::ToRakuAST {
+    method TOP($/) {
+        make RakuAST::QuotedRegex.new(body => $<disjunction>.made);
+    }
+
+    method disjunction($/) {
+        my @branches = $<alternative>>>.made;
+        make @branches == 1
+                ?? @branches[0]
+                !! RakuAST::Regex::SequentialAlternation.new(|@branches);
+    }
+
+    method alternative($/) {
+        my @terms = $<term>>>.made;
+        make @terms == 1
+            ?? @terms[0]
+            !! RakuAST::Regex::Sequence.new(|@terms);
+    }
+
+    method term($/) {
+        with $<atom> {
+            my $atom = $<atom>.made;
+            with $<quantifier> {
+                make RakuAST::Regex::QuantifiedAtom.new:
+                        :$atom, :quantifier(.made);
+            }
+            else {
+                make $atom;
+            }
+        }
+        else {
+            make $<assertion>.made;
+        }
+    }
+
+    method quantifier($/) {
+        my $backtrack = $<frugal>
+                ?? RakuAST::Regex::Backtrack::Frugal
+                !! RakuAST::Regex::Backtrack::Greedy;
+        given $<quantifier-prefix> {
+            when .<from> && .<upto> {
+                make RakuAST::Regex::Quantifier::Range.new:
+                        :min(+.<from>), :max(+.<to> // Int), :$backtrack;
+            }
+            when .<from> {
+                make RakuAST::Regex::Quantifier::Range.new:
+                        :min(+.<from>), :max(+.<from>), :$backtrack;
+            }
+            when '+' {
+                make RakuAST::Regex::Quantifier::OneOrMore.new: :$backtrack;
+            }
+            when '*' {
+                make RakuAST::Regex::Quantifier::ZeroOrMore.new: :$backtrack
+            }
+            when '?' {
+                make RakuAST::Regex::Quantifier::ZeroOrOne.new: :$backtrack
+            }
+        }
+    }
+
+    method assertion($/) {
+        with $<poslook> orelse $<neglook> {
+            my $name := RakuAST::Name.from-identifier('before');
+            my $assertion = RakuAST::Regex::Assertion::Named::RegexArg.new:
+                    :$name, :!capturing, :regex-arg($<disjunction>.ast);
+            my $negated = ?$<neglook>;
+            make RakuAST::Regex::Assertion::Lookahead.new(:$assertion, :$negated);
+        }
+        orwith $<start> {
+            make RakuAST::Regex::Anchor::BeginningOfString.new;
+        }
+        orwith $<end> {
+            make RakuAST::Regex::Anchor::EndOfString.new;
+        }
+        else {
+            !!! 'nyi'
+        }
+    }
+
+    method atom($/) {
+        with $<pattern-character> orelse $<atom-escape> orelse $<character-class> {
+            make .made;
+        }
+        orwith $<any> {
+            make RakuAST::Regex::CharClass::Any.new;
+        }
+        orwith $<capture> {
+            make RakuAST::Regex::CapturingGroup.new($<disjunction>.made);
+        }
+        orwith $<group> {
+            make RakuAST::Regex::Group.new($<disjunction>.made);
+        }
+        else {
+            !!! "Unrecognized atom"
+        }
+    }
+
+    method pattern-character($/) {
+        make RakuAST::Regex::Literal.new(~$/);
+    }
+
+    method atom-escape($/) {
+        with $<character-class-escape> orelse $<character-escape> {
+            make .made;
+        }
+        else {
+            !!! "nyi"
+        }
+    }
+
+    method character-escape($/) {
+        make $/.caps[0].value.made;
+    }
+
+    method control-escape($/) {
+        make do given $/ {
+            when 'f' {
+                RakuAST::Regex::CharClass::FormFeed.new
+            }
+            when 'n' {
+                RakuAST::Regex::CharClass::Newline.new
+            }
+            when 'r' {
+                RakuAST::Regex::CharClass::CarriageReturn.new
+            }
+            when 't' {
+                RakuAST::Regex::CharClass::Tab.new
+            }
+            when 'v' {
+                RakuAST::Regex::Literal.new("\c[VERTICAL TABULATION]")
+            }
+            default {
+                die "Unexpected control escape '$_'";
+            }
+        }
+    }
+
+    method control-letter($/) {
+        with %control-char-to-unicode-name{~$/} {
+            make RakuAST::Regex::Literal.new(uniparse($_));
+        }
+        else {
+            die 'Unknown control character escape is present: ' ~ $/.Str;
+        }
+    }
+
+    method hex-escape-sequence($/) {
+        make RakuAST::Regex::Literal.new($/.Str.substr(1).base(16).chr);
+    }
+
+    method unicode-escape-sequence($/) {
+        make RakuAST::Regex::Literal.new($/.Str.substr(1).base(16).chr);
+    }
+
+    method identity-escape($/) {
+        make RakuAST::Regex::Literal.new($/.Str);
+    }
+
+    method character-class-escape($/) {
+        my constant ESCAPES = {
+            d => RakuAST::Regex::CharClass::Digit,
+            s => RakuAST::Regex::CharClass::Space,
+            w => RakuAST::Regex::CharClass::Word
+        };
+        make ESCAPES{.lc}.new(:negated($_ eq .uc)) given ~$/;
+    }
+}
+
 class ECMA262Regex {
     method validate($str) {
         so ECMA262Regex::Parser.parse($str);
     }
 
     method as-perl6($str) {
-        my $regex = ECMA262Regex::Parser.parse($str, actions => ECMA262Regex::ToPerl6Regex);
+        self.as-raku($str)
+    }
+
+    method as-raku($str) {
+        my $regex = ECMA262Regex::Parser.parse($str, actions => ECMA262Regex::ToRakuRegex);
         without $regex {
             die 'Regex is not valid!';
         }
         $regex.made;
     }
 
+    method as-ast($str) {
+        my $regex = ECMA262Regex::Parser.parse($str, actions => ECMA262Regex::ToRakuAST);
+        without $regex {
+            die 'Regex is not valid!';
+        }
+        $regex.made
+    }
+
     method compile($regex) {
         use MONKEY-SEE-NO-EVAL;
-        my $pattern = self.as-perl6($regex);
-        my $compiled = EVAL '/' ~ $pattern ~ '/';
-        $compiled;
+        EVAL self.as-ast($regex)
     }
 }

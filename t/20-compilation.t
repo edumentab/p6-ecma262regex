@@ -4,7 +4,7 @@ use Test;
 
 # `c` for `compile`
 sub c($str) {
-    ECMA262Regex::Parser.parse($str, actions => ECMA262Regex::ToPerl6Regex).made.Str;
+    ECMA262Regex::Parser.parse($str, actions => ECMA262Regex::ToRakuRegex).made.Str;
 }
 
 is c('...'), '...', 'Any character';
