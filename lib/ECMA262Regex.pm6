@@ -339,7 +339,11 @@ class ECMA262Regex::ToPerl6Regex {
     method class-atom-no-dash($/) {
         with $<class-escape> {
             make $<class-escape>.made;
-        } else {
+        }
+        elsif $/ eq ' ' {
+            make '\\ ';
+        }
+        else {
             make ~$/;
         }
     }

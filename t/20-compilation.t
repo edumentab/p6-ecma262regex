@@ -39,6 +39,7 @@ is c('^\b\B$'), '^<|w><!|w>$', 'Start of string, end of string, word boundary';
 is c('^(?!0)\d+$'), '^<!before \x30>\d+$', '?! compiles correctly';
 is c('[A-Fa-f]+'), '<[A..Fa..f]>+', 'Class ranges are compiled correctly';
 is c('[-]{2}'), '<[-]> ** 2', 'Dash class range';
+is c('[ -]?'), '<[\ -]>?', 'Spaces in char classes are escaped';
 
 is c('\n'), '\n';
 is c('\r'), '\r';
