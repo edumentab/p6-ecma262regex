@@ -3,7 +3,6 @@
     "description" : "Module that provides support for ECMA262 regex notation",
     "perl" : "6.c",
     "license" : "Artistic-2.0",
-    "meta-version" : "0",
     "authors" : [
         "Jonathan Worthington <jnthn@jnthn.net>",
         "Alexander Kiryuhin <alexander.kiryuhin@gmail.com>"
@@ -15,6 +14,7 @@
     "support" : {
         "source" : "git://github.com/edumentab/p6-ecma262regex.git"
     },
-    "version" : "1.1.2",
+    "auth": "zef:jnthn",
+    "version" : "1.1.3",
     "tags" : [ "regex", "regular expressions", "javascript" ]
 }
